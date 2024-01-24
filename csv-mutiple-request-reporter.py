@@ -1,4 +1,4 @@
-# Script Version 2.
+#Script Version 2.
 
 import csv
 import requests
@@ -7,9 +7,12 @@ import requests
 URL = "https://swapi.dev/api/{}/{}/"
 URL_PARAMETERS = ["category", "id"]
 PARAMETERS = { "Nombre" : "name",
-            "Ciudad" : "address.city",
-            "Correo Electrónico" : "email"
+            "Color de piel" : "skin_color",
+            "Fecha de nacimiento" : "birth_year",
+            "Altura" : "height"
+
 }
+REPLACE_CHAR_URL = "{}"
 HEADERS = None
 PATH_DATA = None
 SPLIT_CHAR = "."
@@ -38,16 +41,16 @@ def csv_reader_file():
                 for element in row:
                     data_csv_dict[element]= len(data_csv_dict)
             else:
-                pass
-            """TO DO 
-            hacer el request (post, get)
-            respose.json()
-            escribibr csv
-            """
+                new_url = URL.format(*row)
+                response = requests.get(new_url, headers=HEADERS, timeout=TIME_OUT)
+                if 200 <= response.status_code <= 299:
+                    write_row_to_csv(response.json())
             index += 1
-            print(data_csv_dict)
 
 
+def csv_files_generator():
+    """Crea un archivo csv en cada ocasión que obtiene un response"""
+    csv_reader_file()
 
 def get_property(path,data):
     """Guarda temporalmente una llave y valida si hay mas diccionarios en el mismo"""
@@ -66,10 +69,13 @@ def get_data_from_json(response):
 def write_data_to_csv(content):
     """Escribe en un doc csv datos"""
     for element in content:
-        data = list()
-        for key in title_keys_path:
-            data.append(get_property(PARAMETERS.get(key), element))
-        writer.writerow(data)
+        write_row_to_csv(element)
+
+def write_row_to_csv(element):
+    data = list()
+    for key in title_keys_path:
+        data.append(get_property(PARAMETERS.get(key), element))
+    writer.writerow(data)
 
 def send_request():
     """Determina si es necesario un get o post"""
@@ -77,4 +83,7 @@ def send_request():
         return requests.get(URL, headers=HEADERS, timeout=TIME_OUT)
     return requests.post(URL, headers=HEADERS, timeout=TIME_OUT, data=PAYLOAD)
 
-csv_reader_file()
+
+
+
+csv_files_generator()
