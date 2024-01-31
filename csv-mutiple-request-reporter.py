@@ -2,29 +2,42 @@
 
 import csv
 import requests
+import json
 
-
-URL = "https://swapi.dev/api/{}/{}/"
+URL = "http://0.0.0.0:8000/users/batch"
 URL_PARAMETERS = ["category", "id"]
-PARAMETERS = { "Nombre" : "name",
-            "Color de piel" : "skin_color",
-            "Fecha de nacimiento" : "birth_year",
-            "Altura" : "height"
+PAYLOOAD_PARAMETERS = {"Id":{"name":"id",
+                    "position": 0},
+              "Nombre":{"name":"firstName",
+                    "position": 1},
+              "Apellido": {"name":"lastName",
+                    "position": 2},
+              }
 
+PARAMETERS = {
+    "id": "id"
 }
+
 REPLACE_CHAR_URL = "{}"
+FIRST_KEY_TO_SEARCH = "Nombre "
 HEADERS = None
 PATH_DATA = None
 SPLIT_CHAR = "."
 FILE_NAME = "results.csv"
 DATA_FIILE_NAME = "data.csv"
+CSV_FILE_TO_PAYLOAD = "data_payload.csv"
+FILE_JSON = "payload.json"
 CHAR_DELIMITER = ','
-METHOD = "get"
+METHOD = "post"
 PAYLOAD = None
 TIME_OUT = 10
 data_list = []
+ORIGINAL_PAYLOAD = ""
 
+with open(FILE_JSON, 'r', encoding="utf-8") as file:
+    ORIGINAL_PAYLOAD = file.read().rstrip()
 
+title_keys_payload_path = list(PAYLOOAD_PARAMETERS.keys())
 title_keys_path = list(PARAMETERS.keys())
 writer = csv.writer(open(FILE_NAME, "w" , encoding = "utf-8"), delimiter = CHAR_DELIMITER)
 writer.writerow(title_keys_path)
@@ -33,24 +46,35 @@ data_csv_dict = {}
 
 def csv_reader_file():
     """Lee un archivo csv"""
-    with open(DATA_FIILE_NAME, newline="" , encoding="utf-8") as csv_file:
-        file_reader = csv.reader(csv_file, delimiter=CHAR_DELIMITER)
-        index = 0
-        for row in file_reader:
-            if index == 0:
-                for element in row:
-                    data_csv_dict[element]= len(data_csv_dict)
-            else:
-                new_url = URL.format(*row)
-                response = requests.get(new_url, headers=HEADERS, timeout=TIME_OUT)
-                if 200 <= response.status_code <= 299:
-                    write_row_to_csv(response.json())
-            index += 1
+    if METHOD == "get":
+        with open(DATA_FIILE_NAME, newline="" , encoding="utf-8") as csv_file:
+            file_reader = csv.reader(csv_file, delimiter=CHAR_DELIMITER)
+            index = 0
+            for row in file_reader:
+                if index != 0:
+                    new_url = URL.format(*row)
+                    response = send_request(new_url)
+                    if 200 <= response.status_code <= 299:
+                        write_row_to_csv(response.json())
+                index += 1
+    else:
+        with open(CSV_FILE_TO_PAYLOAD, newline="", encoding="utf-8") as payload_file:
+            file_data_payload = csv.reader(payload_file, delimiter=CHAR_DELIMITER)
+            index = 0
+            for row in file_data_payload:
+                if index != 0:
+                    json_payload = ORIGINAL_PAYLOAD
+                    for key in title_keys_payload_path:
+                        dict_payload = PAYLOOAD_PARAMETERS.get(key)
+                        json_payload=json_payload.replace(
+                            "{"+dict_payload.get("name")+"}",
+                            row[dict_payload.get("position")]
+                        )
+                    response = send_request(URL,json.loads(json_payload))
+                    if 200 <= response.status_code <= 299:
+                        write_row_to_csv(response.json())
 
-
-def csv_files_generator():
-    """Crea un archivo csv en cada ocasión que obtiene un response"""
-    csv_reader_file()
+                index += 1
 
 def get_property(path,data):
     """Guarda temporalmente una llave y valida si hay mas diccionarios en el mismo"""
@@ -60,30 +84,20 @@ def get_property(path,data):
         element = element.get(key)
     return element
 
-def get_data_from_json(response):
-    """Valida si necesita entrar mas de una vez a un json"""
-    if PATH_DATA is None:
-        return response.json()
-    return get_property(PATH_DATA, response.json())
-
-def write_data_to_csv(content):
-    """Escribe en un doc csv datos"""
-    for element in content:
-        write_row_to_csv(element)
-
 def write_row_to_csv(element):
+    """Escribe datos en el archivo csv"""
     data = list()
     for key in title_keys_path:
         data.append(get_property(PARAMETERS.get(key), element))
     writer.writerow(data)
 
-def send_request():
+def send_request(url, payload=None):
     """Determina si es necesario un get o post"""
     if METHOD == "get":
-        return requests.get(URL, headers=HEADERS, timeout=TIME_OUT)
-    return requests.post(URL, headers=HEADERS, timeout=TIME_OUT, data=PAYLOAD)
+        return requests.get(url, headers=HEADERS, timeout=TIME_OUT)
+    return requests.post(url, headers=HEADERS, timeout=TIME_OUT, json=payload)
 
 
 
 
-csv_files_generator()
+csv_reader_file()
