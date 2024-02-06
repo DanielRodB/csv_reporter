@@ -4,10 +4,10 @@ import csv
 import requests
 
 
-URL = "https://jsonplaceholder.typicode.com/users"
-PARAMETERS = { "Nombre" : "name",
-            "Ciudad" : "address.city",
-            "Correo Electrónico" : "email"
+URL = "http://0.0.0.0:8000/users"
+PARAMETERS = {  "Nombre" : "name",
+            "Ciudad" : "city",
+            "Codigo Postal": "postalCode",
 }
 HEADERS = None
 PATH_DATA = None
@@ -28,6 +28,7 @@ def get_property(path,data):
     """Guarda temporalmente una llave y valida si hay mas diccionarios en el mismo"""
     path_keys = path.split(SPLIT_CHAR)
     element = data
+    print(element)
     for key in path_keys:
         element = element.get(key)
     return element
