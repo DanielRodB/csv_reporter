@@ -4,7 +4,7 @@ import csv
 import requests
 import json
 
-URL = "http://0.0.0.0:8000/users/batch"
+URL = "http://0.0.0.0:8000/users/{}"
 URL_PARAMETERS = ["category", "id"]
 PAYLOOAD_PARAMETERS = {"Id":{"name":"id",
                     "position": 0},
@@ -15,23 +15,24 @@ PAYLOOAD_PARAMETERS = {"Id":{"name":"id",
               }
 
 PARAMETERS = {
-    "id": "id"
+    "id": "id",
+    "Nombre": "first_name",
+    "Calle": "address,streetAddress"
 }
 
 REPLACE_CHAR_URL = "{}"
-FIRST_KEY_TO_SEARCH = "Nombre "
 HEADERS = None
 PATH_DATA = None
-SPLIT_CHAR = "."
+SPLIT_CHAR = ","
 FILE_NAME = "results.csv"
 DATA_FIILE_NAME = "data.csv"
 CSV_FILE_TO_PAYLOAD = "data_payload.csv"
 FILE_JSON = "payload.json"
 CHAR_DELIMITER = ','
-METHOD = "post"
+CHAR_DELIMITER_WRITER = "\t"
+METHOD = "get"
 PAYLOAD = None
 TIME_OUT = 10
-data_list = []
 ORIGINAL_PAYLOAD = ""
 
 with open(FILE_JSON, 'r', encoding="utf-8") as file:
@@ -39,7 +40,7 @@ with open(FILE_JSON, 'r', encoding="utf-8") as file:
 
 title_keys_payload_path = list(PAYLOOAD_PARAMETERS.keys())
 title_keys_path = list(PARAMETERS.keys())
-writer = csv.writer(open(FILE_NAME, "w" , encoding = "utf-8"), delimiter = CHAR_DELIMITER)
+writer = csv.writer(open(FILE_NAME, "w" , encoding = "utf-8"), delimiter = CHAR_DELIMITER_WRITER)
 writer.writerow(title_keys_path)
 data_csv_dict = {}
 
